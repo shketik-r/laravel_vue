@@ -1,0 +1,16 @@
+@use 'modules/header';
+
+
+body{
+  font-family: sans-serif;
+}
+
+.btn{
+  padding: 10px 20px;
+  border-radius: 6px;
+  background-color: #0c5460;
+  margin: 0;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
