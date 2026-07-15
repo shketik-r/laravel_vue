@@ -53,6 +53,7 @@ const fields = ref([]);
 const formData = reactive({});
 const errors = ref({}); // Объект для хранения ошибок валидации с бэка
 
+
 const fetchFields = async () => {
   if (fields.value.length > 0) return;
   loading.value = true;
