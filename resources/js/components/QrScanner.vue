@@ -3,7 +3,6 @@ import { onMounted, onUnmounted, ref } from 'vue';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 
 const emit = defineEmits<{
-    // Передаем родителю текст, тип и НАСТОЯЩИЙ snapshot (base64)
     (e: 'scanned', data: { text: string; type: string; snapshot: string }): void;
 }>();
 
@@ -15,8 +14,8 @@ const cameraError = ref<string | null>(null);
 const isScanned = ref(false);
 const isAnalyzing = ref(false);
 
-let bufferText = '';
-let bufferFormat = '';
+let lastDecodedText = '';
+let lastDecodedResult: any = null;
 
 const BOX_RATIO = 0.7;
 
@@ -42,12 +41,12 @@ const startCameraStream = async () => {
                 ]
             },
             (decodedText, decodedResult) => {
-                bufferText = decodedText;
-                bufferFormat = decodedResult.result?.format?.formatName || '';
+                lastDecodedText = decodedText;
+                lastDecodedResult = decodedResult;
             },
             () => {
-                bufferText = '';
-                bufferFormat = '';
+                lastDecodedText = '';
+                lastDecodedResult = null;
             }
         );
         isCameraLoading.value = false;
@@ -61,42 +60,36 @@ onMounted(async () => {
     await startCameraStream();
 });
 
-// КЛИК ПО КНОПКЕ ЗАТВОРА
 const captureAndScan = async () => {
     if (isScanned.value || isAnalyzing.value) return;
     isAnalyzing.value = true;
 
-    // Если нажали вхолостую (кода нет)
-    if (!bufferText) {
-        alert('Код не найден в рамке. Наведите прицел точнее и нажмите кнопку.');
-        bufferText = '';
-        bufferFormat = '';
+    if (!lastDecodedText || !lastDecodedResult) {
+        alert('Код еще не пойман в фокус. Наведите рамку точнее на код и нажмите кнопку.');
+        bufferReset();
         isAnalyzing.value = false;
-        await startCameraStream(); // Очищаем поток от зависаний
+        await startCameraStream();
         return;
     }
 
-    // Если код в буфере есть — делаем ОДИН моментальный снимок
     const video = document.querySelector(`#${containerId} video`) as HTMLVideoElement;
     if (!video) { isAnalyzing.value = false; return; }
 
     isScanned.value = true;
 
+    const rawFormat = lastDecodedResult.result?.format?.formatName;
     let typeName = 'QR-код';
     let highlightColor = '#3b82f6';
-    let side: 'left' | 'right' = 'left';
 
-    if (bufferFormat === 'DATA_MATRIX') {
+    if (rawFormat === 'DATA_MATRIX') {
         typeName = 'DataMatrix (Маркировка)';
         highlightColor = '#a855f7';
-        side = 'right';
     }
 
-    // Генерируем настоящую картинку из видеопотока ровно в один клик
-    const snapshotBase64 = makeFocusedSnapshot(video, highlightColor, side);
+    const snapshotBase64 = makeFocusedSnapshot(video, highlightColor);
 
     emit('scanned', {
-        text: bufferText,
+        text: lastDecodedText,
         type: typeName,
         snapshot: snapshotBase64
     });
@@ -105,8 +98,12 @@ const captureAndScan = async () => {
     isAnalyzing.value = false;
 };
 
-// Функция генерации фотоснимка (отрабатывает строго 1 раз при успехе)
-const makeFocusedSnapshot = (video: HTMLVideoElement, color: string, side: 'left' | 'right'): string => {
+const bufferReset = () => {
+    lastDecodedText = '';
+    lastDecodedResult = null;
+};
+
+const makeFocusedSnapshot = (video: HTMLVideoElement, color: string): string => {
     const canvas = document.getElementById('screenshot-canvas') as HTMLCanvasElement;
     const ctx = canvas!.getContext('2d')!;
 
@@ -121,27 +118,94 @@ const makeFocusedSnapshot = (video: HTMLVideoElement, color: string, side: 'left
     canvas.width = 450;
     canvas.height = 450;
 
+    // 1. Слой подложки: Рисуем чистый кадр из видеопотока
     ctx.drawImage(video, sx, sy, boxSize, boxSize, 0, 0, 450, 450);
+
+    // 2. Слой вуали: Затемняем весь кадр полупрозрачным черным цветом
     ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
     ctx.fillRect(0, 0, 450, 450);
 
-    ctx.save();
-    ctx.globalCompositeOperation = 'destination-out';
-    const maskWidth = 190; const maskHeight = 220; const maskY = 115;
-    const maskX = side === 'left' ? 25 : 235; const radius = 16;
+    const points = lastDecodedResult?.result?.textPoints;
 
-    ctx.beginPath();
-    ctx.moveTo(maskX + radius, maskY); ctx.lineTo(maskX + maskWidth - radius, maskY);
-    ctx.quadraticCurveTo(maskX + maskWidth, maskY, maskX + maskWidth, maskY + radius);
-    ctx.lineTo(maskX + maskWidth, maskY + maskHeight - radius);
-    ctx.quadraticCurveTo(maskX + maskWidth, maskY + maskHeight, maskX + maskWidth - radius, maskY + maskHeight);
-    ctx.lineTo(maskX + radius, maskY + maskHeight); ctx.quadraticCurveTo(maskX, maskY + maskHeight, maskX, maskY + maskHeight - radius);
-    ctx.lineTo(maskX, maskY + radius); ctx.quadraticCurveTo(maskX, maskY, maskX + radius, maskY);
-    ctx.closePath(); ctx.fill(); ctx.restore();
+    const mapPoint = (p: { x: number; y: number }) => {
+        const relativeX = p.x - sx;
+        const relativeY = p.y - sy;
+        return {
+            x: (relativeX / boxSize) * 450,
+            y: (relativeY / boxSize) * 450
+        };
+    };
 
-    ctx.save();
-    ctx.strokeStyle = color; ctx.lineWidth = 5; ctx.lineJoin = 'round'; ctx.shadowBlur = 12; ctx.shadowColor = color;
-    ctx.stroke(); ctx.restore();
+    if (points && points.length >= 3) {
+        // --- СЦЕНАРИЙ А: Есть точные аппаратно-определенные координаты кода ---
+
+        // Вырезаем маску (удаляем черный фон внутри контура кода)
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        const p0 = mapPoint(points[0]);
+        ctx.moveTo(p0.x, p0.y);
+        for (let i = 1; i < points.length; i++) {
+            const pt = mapPoint(points[i]);
+            ctx.lineTo(pt.x, pt.y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore(); // Сбрасываем режим destination-out обратно на обычное рисование
+
+        // Рисуем неоновую рамку строго по этим же точкам
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 5;
+        ctx.lineJoin = 'round';
+        ctx.shadowBlur = 14;
+        ctx.shadowColor = color;
+
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        for (let i = 1; i < points.length; i++) {
+            const pt = mapPoint(points[i]);
+            ctx.lineTo(pt.x, pt.y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+
+    } else {
+        // --- СЦЕНАРИЙ Б: Подстраховка (если библиотека вернула пустой массив точек) ---
+        const isDataMatrix = lastDecodedResult?.result?.format?.formatName === 'DATA_MATRIX';
+
+        const maskWidth = 180;
+        const maskHeight = 180;
+        const maskY = 135;
+        const maskX = isDataMatrix ? 245 : 25;
+        const radius = 16;
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.moveTo(maskX + radius, maskY);
+        ctx.lineTo(maskX + maskWidth - radius, maskY);
+        ctx.quadraticCurveTo(maskX + maskWidth, maskY, maskX + maskWidth, maskY + radius);
+        ctx.lineTo(maskX + maskWidth, maskY + maskHeight - radius);
+        ctx.quadraticCurveTo(maskX + maskWidth, maskY + maskHeight, maskX + maskWidth - radius, maskY + maskHeight);
+        ctx.lineTo(maskX + radius, maskY + maskHeight);
+        ctx.quadraticCurveTo(maskX, maskY + maskHeight, maskX, maskY + maskHeight - radius);
+        ctx.lineTo(maskX, maskY + radius);
+        ctx.quadraticCurveTo(maskX, maskY, maskX + radius, maskY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 5;
+        ctx.lineJoin = 'round';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = color;
+        ctx.strokeRect(maskX, maskY, maskWidth, maskHeight);
+        ctx.restore();
+    }
 
     return canvas.toDataURL('image/jpeg', 0.85);
 };
