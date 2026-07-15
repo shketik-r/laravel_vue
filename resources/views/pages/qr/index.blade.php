@@ -5,22 +5,16 @@
 @endpush
 
 @push('meta')
-    <title>О нас</title>
-    <meta name="description" content="описание сраницы">
+
+
 @endpush
 
 
 @section('content')
 
-    <h1>Страница о нас</h1>
-
-
     <!--  компонент тест  -->
-    <example-component></example-component>
+    <qr-scanner></qr-scanner>
     <!-- / компонент тест  -->
-
-
-
 @endsection
 
 

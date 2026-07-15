@@ -1,3 +1,4 @@
+import { h } from 'vue';
 // 1. Создаем универсальный HTML-скелетон на чистом CSS
   export const createSkeleton = (type = 'card') => {
     return {

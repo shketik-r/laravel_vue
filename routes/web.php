@@ -3,6 +3,7 @@
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\QrController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,7 +23,8 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 // Страница "О нас"
 Route::get('about', [AboutController::class, 'index'])->name('about.index');
 
-
+// QR
+Route::get('qr', [QrController::class, 'index'])->name('qr.index');
 
 // API
 Route::get('/api/form-fields', [FormController::class, 'getFields']);

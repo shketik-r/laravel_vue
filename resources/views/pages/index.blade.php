@@ -15,9 +15,8 @@
     <h1>{{$title}}</h1>
 
 
-    <items-component :features-data='@json($features)'>
+    <items-component :features-data='@json($features)'></items-component>
 
-    </items-component>
     <!--  компонент тест  -->
     <example-component>
         <div class="skeleton-line-simple skeleton-blink"></div>

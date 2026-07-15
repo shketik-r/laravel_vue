@@ -9,13 +9,19 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/js/app.js',
                 'resources/assets/styles/main.scss',
-                'resources/scss/page/about.scss'
 
             ],
             refresh: true,
         }),
         vue(),
     ],
+
+    server: {
+        host: '0.0.0.0', // Позволяет Vite слушать внешние подключения
+        hmr: {
+            host: 'localhost',
+        },
+    },
 
     resolve: {
         alias: {

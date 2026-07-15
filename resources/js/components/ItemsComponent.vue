@@ -1,25 +1,47 @@
 <template>
-    <div class="features-block">
-        <!-- Выводим заголовок "Наши преимущества" -->
-        <h2>{{ featuresData.title }}</h2>
+    <div class="features-block" v-if="featuresData">
+        <!-- Безопасно проверяем и выводим заголовок через точку -->
+        <h2 >{{ featuresData.title || 'Наши преимущества 2' }}</h2>
 
-        <!-- Перебираем элементы списка -->
-        <ul>
+
+        <ul v-if="featuresData.items?.length">
             <li v-for="(item, index) in featuresData.items" :key="index">
                 {{ item }}
             </li>
         </ul>
     </div>
+
 </template>
 
-<script setup>
-import { defineProps } from 'vue';
+<script setup lang="ts">
 
-// Принимаем данные от Laravel. Vue сам переведет kebab-case из Blade в camelCase
-defineProps({
-    featuresData: {
-        type: Object,
-        required: true
+
+
+withDefaults(
+    defineProps<{
+        featuresData?: {
+            title?: string,
+            items: {
+                title: string,
+                src: string
+            }[]
+        }
+    }>(),
+    {
+        featuresData: () => ({
+            title: '',
+            items: []
+        })
     }
-});
+);
+
+
+
+
 </script>
+
+
+
+
+
+
