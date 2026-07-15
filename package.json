@@ -3,11 +3,14 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "serve": "php artisan serve",
+        "dev:all": "concurrently \"npm run dev\" \"npm run serve\" --names \"VITE,LARAVEL\" --colors \"cyan,green\""
     },
     "devDependencies": {
         "@vitejs/plugin-vue": "^5.0.4",
         "axios": "^1.6.4",
+        "concurrently": "^10.0.3",
         "laravel-vite-plugin": "^1.0.0",
         "sass-embedded": "^1.100.0",
         "vite": "^5.4.21",

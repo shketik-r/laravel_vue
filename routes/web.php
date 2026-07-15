@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\AboutController;
 use App\Http\Controllers\FormController;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,14 +16,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+// Главная страница
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('about', function () {
-    return view('about.index');
-})->name('about.index');
+// Страница "О нас"
+Route::get('about', [AboutController::class, 'index'])->name('about.index');
 
 
+
+// API
 Route::get('/api/form-fields', [FormController::class, 'getFields']);
 Route::post('/api/form-submit', [FormController::class, 'submit']);

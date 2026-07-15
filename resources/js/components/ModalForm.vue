@@ -120,7 +120,7 @@ onUnmounted(() => { window.removeEventListener('open-feedback-modal', openModal)
   display: block;
 }
 
-/* Все остальные старые стили остаются без изменений */
+
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
 .modal-content { background: white; padding: 30px; border-radius: 8px; width: 100%; max-width: 450px; position: relative; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
 .btn-close { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 28px; cursor: pointer; color: #9ca3af; }
