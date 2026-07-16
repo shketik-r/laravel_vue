@@ -12,6 +12,17 @@
                 <span class="status-text">Данные успешно извлечены</span>
             </div>
 
+            <!-- НОВЫЙ БЛОК: Вывод сделанного снимка для подтверждения -->
+            <div v-if="scanResult.image" class="snapshot-preview">
+                <label class="input-label">Фиксация кадра в момент сканирования:</label>
+                <div class="image-container">
+                    <img :src="scanResult.image" alt="Снимок кода" />
+                    <div class="scan-marker-overlay">
+                        <span class="marker-aim">🎯 Код считан из этого кадра</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Блок вывода расшифрованного текста кода маркировки -->
             <div class="code-preview">
                 <label class="input-label">Зашитый текст (Строка маркировки):</label>
@@ -42,13 +53,14 @@
 import { ref, computed } from 'vue';
 import QrScanner from './QrScanner.vue';
 
-const scanResult = ref({ text: '', type: '' });
+// Расширяем реактивный объект полем image
+const scanResult = ref({ text: '', type: '', image: '' });
 const scannerKey = ref(0);
 const isCopied = ref(false);
 
-const handleQrResult = (data: { text: string; type: string }) => {
+const handleQrResult = (data: { text: string; type: string; image: string }) => {
     scanResult.value = data;
-    isCopied.value = false; // сброс статуса копирования
+    isCopied.value = false;
 };
 
 const isLink = computed(() => {
@@ -62,7 +74,6 @@ const goToLink = () => {
     }
 };
 
-// Функция быстрого копирования криптохвоста DataMatrix
 const copyToClipboard = async () => {
     try {
         await navigator.clipboard.writeText(scanResult.value.text);
@@ -74,7 +85,7 @@ const copyToClipboard = async () => {
 };
 
 const resetScanner = () => {
-    scanResult.value = { text: '', type: '' };
+    scanResult.value = { text: '', type: '', image: '' };
     scannerKey.value++;
 };
 </script>
@@ -88,32 +99,24 @@ const resetScanner = () => {
 .bg-purple { background-color: #a855f7; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.25); }
 .status-text { font-size: 14px; color: #94a3b8; font-weight: 600; }
 
+/* СТИЛИ ДЛЯ ПРЕВЬЮ СНИМКА */
+.snapshot-preview { margin-bottom: 20px; }
+.image-container { position: relative; width: 100%; aspect-ratio: 1 / 1; border-radius: 14px; overflow: hidden; border: 1px solid #cbd5e1; background: #000; }
+.image-container img { width: 100%; height: 100%; object-fit: cover; }
+.scan-marker-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.8)); padding: 12px; text-align: center; }
+.marker-aim { color: #fff; font-size: 13px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+
 .code-preview { margin-bottom: 20px; }
 .input-label { font-size: 13px; font-weight: 700; color: #64748b; display: block; margin-bottom: 8px; }
 
-code {
-    display: block;
-    background: #0f172a;
-    color: #38bdf8;
-    padding: 16px;
-    border-radius: 14px;
-    font-family: monospace;
-    word-break: break-all; /* Автоперенос длинной строки DataMatrix */
-    font-size: 13px;
-    line-height: 1.5;
-}
-
+code { display: block; background: #0f172a; color: #38bdf8; padding: 16px; border-radius: 14px; font-family: monospace; word-break: break-all; font-size: 13px; line-height: 1.5; }
 .actions-container { display: flex; flex-direction: column; gap: 10px; }
-
 .btn { width: 100%; border: none; padding: 15px; border-radius: 14px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.2s, transform 0.1s; }
 .btn:active { transform: scale(0.98); }
-
 .btn-primary { background-color: #10b981; color: #ffffff; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
 .btn-primary:active { background-color: #059669; }
-
 .btn-copy { background-color: #475569; color: #ffffff; box-shadow: 0 4px 12px rgba(71, 85, 105, 0.15); }
 .btn-copy:active { background-color: #334155; }
-
 .btn-secondary { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 .btn-secondary:active { background-color: #e2e8f0; }
 </style>
