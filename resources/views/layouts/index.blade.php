@@ -27,11 +27,11 @@
 
 
 <!-- компонент модального окна (форма)-->
-<modal-form></modal-form>
+<modal-manager></modal-manager>
 
 
 <!-- компонент модального окна (ответ) -->
-<modal-success></modal-success>
+<toast-notification :toasts="toasts"></toast-notification>
 
 
 {{-- общие скрипты --}}

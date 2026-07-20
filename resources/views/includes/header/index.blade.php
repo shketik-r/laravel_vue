@@ -7,7 +7,7 @@
             <a href="{{ route('qr.index') }}">QR</a>
         </nav>
         <div class="header__options">
-            <button class="btn" onclick="window.dispatchEvent(new Event('open-feedback-modal'))">
+            <button class="btn" onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: { name: 'modal-form' } }));">
                 обратная связь
             </button>
         </div>
