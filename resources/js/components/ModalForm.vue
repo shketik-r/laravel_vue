@@ -4,7 +4,7 @@
         <div v-else class="modal-content">
             <button class="btn-close" @click="closeModal">&times;</button>
 
-            <h2>Создать клиента</h2>
+            <h2>{{ form.id ? 'Редактировать клиента' : 'Создать клиента' }}</h2>
 
             <form @submit.prevent="submitForm" novalidate>
 
@@ -36,7 +36,7 @@
                 </div>
 
                 <button type="submit" class="btn-submit" :disabled="submitting">
-                    {{ submitting ? 'Отправка...' : 'Отправить' }}
+                    {{ submitting ? 'Сохранение...' : (form.id ? 'Сохранить изменения' : 'Отправить') }}
                 </button>
             </form>
         </div>
@@ -44,14 +44,18 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, inject } from 'vue';
+import {onMounted, onUnmounted, ref, inject, watch} from 'vue';
+import { api } from '@/api'; // Наш Axios-сервис
+
+const props = defineProps({
+    modalData: Object
+});
 
 const showToast = inject('showToast');
 
 const getInitialForm = () => ({
     name: '',
     age: '',
-    // тут может быть еще 20 полей
 });
 
 const form = ref(getInitialForm());
@@ -105,45 +109,45 @@ const validateForm = () => {
 };
 
 const submitForm = async () => {
-    // 1. Проверяем валидность на клиенте. Если есть ошибки — прерываем отправку
     if (!validateForm()) return;
-
     submitting.value = true;
 
     try {
-        const response = await fetch('/api/clients', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(form.value)
-        });
-
-        const result = await response.json();
-
-
-        if (response.ok) {
-            console.log(result.message);
-            showToast(result.message, 'success');
-            closeModal(); // Закрываем форму при успехе
-            form.value = getInitialForm();
-
-            window.dispatchEvent(new CustomEvent('refresh-clients-list'));
+        let result;
+        // 3. Магия Axios-сервиса: определяем режим работы по наличию id
+        if (form.value.id) {
+            // Режим редактирования: PUT /api/clients/{id}
+            result = await api.clients.update(form.value.id, form.value);
         } else {
-            // 2. Если бэкенд Laravel вернул ошибку валидации (код 422), подставляем её под поля
-            if (result.errors) {
-                if (result.errors.name) errors.value.name = result.errors.name[0];
-                if (result.errors.age) errors.value.age = result.errors.age[0];
-            }
-            showToast('Ошибка заполнения формы', 'error');
+            // Режим создания: POST /api/clients
+            result = await api.clients.create(form.value);
         }
+
+        showToast(result.message, 'success');
+        closeModal();
+        form.value = getInitialForm(); // очищаем поля
+
+        // Обновляем список на той странице, где находится пользователь
+        window.dispatchEvent(new CustomEvent('refresh-clients-list'));
+
     } catch (error) {
-        showToast('Ошибка сервера', 'error');
+        if (error.errors) {
+            if (error.errors.name) errors.value.name = error.errors.name;
+            if (error.errors.age) errors.value.age = error.errors.age;
+        }
+        showToast(error.message, 'error');
     } finally {
         submitting.value = false;
     }
 };
+
+watch(() => props.modalData, (newData) => {
+    if (newData) {
+        form.value = { ...newData };
+    } else {
+        form.value = getInitialForm();
+    }
+}, { immediate: true });
 
 onMounted(() => {
     window.addEventListener('open-feedback-modal', openModal);

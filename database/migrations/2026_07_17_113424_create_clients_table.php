@@ -17,6 +17,12 @@ return new class extends Migration
             $table->string('name');
             $table->integer('age');
 
+            // === ДОБАВЬТЕ ЭТУ СТРОКУ ===
+            // nullable() нужен, чтобы старые клиенты без категории не вызвали ошибку
+            // constrained() связывает поле с таблицей categories в MySQL
+            // cascadeOnDelete() удалит клиентов, если удалить саму категорию
+            $table->foreignId('category_id')->nullable()->constrained()->cascadeOnDelete();
+
             $table->timestamps();
         });
     }

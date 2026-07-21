@@ -1,0 +1,67 @@
+/* Стили для скелетона, который будет виден ДО загрузки Vue */
+@keyframes skeleton-shimmer {
+    0% { background-position: 150% 0; }
+    100% { background-position: -50% 0; }
+}
+.skeleton-blink {
+    background: linear-gradient(90deg, #f2f2f2 25%, #e6e6e6 50%, #f2f2f2 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s infinite linear;
+    border-radius: 4px;
+}
+.page-loader {
+    padding: 20px;
+}
+
+/* Стили для скелетона списка пользователей */
+.sk-users-list {
+    max-width: 500px;
+    margin: 30px auto;
+    padding: 20px;
+    //background: #id; /* подстройте под ваш дизайн */
+}
+
+.sk-user-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.sk-user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #e5e7eb;
+}
+
+.sk-user-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sk-user-line {
+    height: 14px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    width: 60%;
+
+    &.short {
+        width: 30%;
+        height: 10px;
+    }
+}
+
+/* Эффект анимации пульсации (если у вас его еще нет) */
+.sk-blink {
+    animation: sk-loading 1.5s infinite ease-in-out;
+}
+
+@keyframes sk-loading {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
