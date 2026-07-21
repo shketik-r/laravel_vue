@@ -7,7 +7,7 @@ use App\Models\Client; // Подключаем модель для работы 
 
 class ClientController extends Controller
 {
-    public function store(Request $request)
+    public function store(Request $request): \Illuminate\Http\JsonResponse
     {
         // 1. Валидация пришедших от Vue данных
         $validated = $request->validate([
@@ -24,5 +24,18 @@ class ClientController extends Controller
             'message' => 'Клиент успешно сохранен в базу данных!',
             'data' => $client
         ], 201);
+    }
+
+    public function index(): \Illuminate\Http\JsonResponse
+    {
+        // Магия Laravel: сортируем клиентов по новизне (сначала свежие)
+        // и берем последние 10 записей
+        $clients = Client::latest()->take(10)->get();
+
+        // Возвращаем JSON-ответ
+        return response()->json([
+            'success' => true,
+            'data' => $clients
+        ], 200);
     }
 }

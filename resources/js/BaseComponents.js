@@ -32,7 +32,7 @@ const app = createApp({
 // 2. Регистрируем компоненты асинхронно с привязкой скелетонов
 app.component('items-component', defineAsyncComponent({
     loader: () => import('@/components/ItemsComponent.vue'),
-    loadingComponent: createSkeleton('card'),
+    loadingComponent: createSkeleton('card-users'),
     delay: 0 // Скелетон появится, если загрузка займет больше 100мс
 }));
 

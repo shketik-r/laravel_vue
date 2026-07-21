@@ -15,7 +15,7 @@
     <h1>{{$title}}</h1>
 
 
-    <items-component :features-data='@json($features)'></items-component>
+    <items-component></items-component>
 
     <!--  компонент тест  -->
     <example-component>

@@ -128,6 +128,8 @@ const submitForm = async () => {
             showToast(result.message, 'success');
             closeModal(); // Закрываем форму при успехе
             form.value = getInitialForm();
+
+            window.dispatchEvent(new CustomEvent('refresh-clients-list'));
         } else {
             // 2. Если бэкенд Laravel вернул ошибку валидации (код 422), подставляем её под поля
             if (result.errors) {

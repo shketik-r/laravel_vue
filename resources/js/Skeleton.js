@@ -1,8 +1,10 @@
 import { h } from 'vue';
-// 1. Создаем универсальный HTML-скелетон на чистом CSS
-  export const createSkeleton = (type = 'card') => {
+
+// Универсальный HTML-скелетон
+export const createSkeleton = (type = 'card' , count = 1) => {
     return {
         render() {
+            // 1. Скелетон для ФОРМЫ
             if (type === 'form') {
                 return h('div', { class: 'sk-form' }, [
                     h('div', { class: 'sk-blink sk-title' }),
@@ -11,9 +13,25 @@ import { h } from 'vue';
                     h('div', { class: 'sk-blink sk-btn' })
                 ]);
             }
-            // По умолчанию (для items-component и example-component) — сетка карточек
+
+            // 2. Скелетон для СПИСКА ПОЛЬЗОВАТЕЛЕЙ (Исправлено)
+            if (type === 'card-users') {
+                return h('div', { class: 'sk-users-list' },
+                    Array.from({ length: count }).map(() =>
+                        h('div', { class: 'sk-user-row' }, [
+                            h('div', { class: 'sk-blink sk-user-avatar' }),
+                            h('div', { class: 'sk-user-info' }, [
+                                h('div', { class: 'sk-blink sk-user-line' }),
+                                h('div', { class: 'sk-blink sk-user-line short' })
+                            ])
+                        ])
+                    )
+                );
+            }
+
+            // 3. По умолчанию — сетка карточек
             return h('div', { class: 'sk-grid' },
-                Array.from({ length: 3 }).map(() =>
+                Array.from({ length: count }).map(() =>
                     h('div', { class: 'sk-card' }, [
                         h('div', { class: 'sk-blink sk-img' }),
                         h('div', { class: 'sk-blink sk-title' }),
@@ -27,3 +45,4 @@ import { h } from 'vue';
 };
 
 
+export const SkeletonComponent = (type, count) => createSkeleton(type, count);

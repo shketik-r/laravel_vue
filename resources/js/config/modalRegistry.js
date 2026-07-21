@@ -16,6 +16,6 @@ export const modalRegistry = {
             loadingComponent: createSkeleton('form'),
             delay: 50
         }),
-        keepAlive: false // Эта форма ПОЛНОСТЬЮ УДАЛИТСЯ из DOM после закрытия
+        keepAlive: false
     }
 };
